@@ -46,6 +46,11 @@ class DatabaseHelper {
       route_id INTEGER REFERENCES routes(id), bus_id INTEGER REFERENCES buses(id),
       departure_date TEXT, departure_time TEXT, available_seats INTEGER, status TEXT)''');
 
+    await db.execute('''CREATE TABLE seats (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trip_id INTEGER REFERENCES trips(id), seat_number INTEGER,
+      status TEXT DEFAULT 'AVAILABLE', occupied_by TEXT, occupied_at TEXT)''');
+
     await db.execute('''CREATE TABLE bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER REFERENCES users(id), trip_id INTEGER REFERENCES trips(id),
@@ -97,7 +102,7 @@ class DatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     for (final t in ['app_notifications','contact_info','promotions','admin_logs',
-      'payments','luggage','passengers','bookings','trips','buses','routes',
+      'payments','luggage','passengers','bookings','seats','trips','buses','routes',
       'users','payment_accounts']) {
       await db.execute('DROP TABLE IF EXISTS $t');
     }
@@ -149,7 +154,18 @@ class DatabaseHelper {
       {'route_id':3,'bus_id':3,'departure_date':now.toIso8601String().split('T')[0],'departure_time':'06:00','available_seats':25,'status':'PROGRAMME'},
       {'route_id':7,'bus_id':1,'departure_date':now.toIso8601String().split('T')[0],'departure_time':'09:00','available_seats':38,'status':'PROGRAMME'},
     ];
-    for (final t in tripData) { await db.insert('trips', t); }
+    for (final t in tripData) {
+      final tripId = await db.insert('trips', t);
+      // Initialize seats for this trip
+      final busCapacity = t['available_seats'] as int;
+      for (int i = 1; i <= busCapacity; i++) {
+        await db.insert('seats', {
+          'trip_id': tripId,
+          'seat_number': i,
+          'status': 'AVAILABLE'
+        });
+      }
+    }
 
     // Sample bookings
     await db.insert('bookings', {'user_id':2,'trip_id':1,'total_passengers':1,
@@ -300,6 +316,11 @@ class DatabaseHelper {
   Future<void> updateTripSeats(int tripId, int seats) async =>
       (await database).update('trips', {'available_seats':seats},
           where:'id=?', whereArgs:[tripId]);
+
+  Future<void> updateTripAvailableSeatsFromSeatsTable(int tripId) async {
+    final availableCount = await getAvailableSeats(tripId);
+    await updateTripSeats(tripId, availableCount.length);
+  }
   Future<void> deleteTrip(int id) async =>
       (await database).delete('trips', where:'id=?', whereArgs:[id]);
 
@@ -412,10 +433,50 @@ class DatabaseHelper {
   }
 
   // ── SEATS ─────────────────────────────────────────────────────────────────
+  Future<void> initializeSeatsForTrip(int tripId, int busCapacity) async {
+    final db = await database;
+    for (int i = 1; i <= busCapacity; i++) {
+      await db.insert('seats', {
+        'trip_id': tripId,
+        'seat_number': i,
+        'status': 'AVAILABLE'
+      });
+    }
+  }
+
+  Future<List<SeatModel>> getSeatsForTrip(int tripId) async {
+    final r = await (await database).query('seats',
+        where: 'trip_id=?', whereArgs: [tripId], orderBy: 'seat_number ASC');
+    return r.map(SeatModel.fromMap).toList();
+  }
+
+  Future<SeatModel?> getSeat(int tripId, int seatNumber) async {
+    final r = await (await database).query('seats',
+        where: 'trip_id=? AND seat_number=?', whereArgs: [tripId, seatNumber], limit: 1);
+    return r.isEmpty ? null : SeatModel.fromMap(r.first);
+  }
+
+  Future<void> updateSeatStatus(int tripId, int seatNumber, String status,
+      {String? occupiedBy}) async {
+    final updates = <String, dynamic>{'status': status, 'occupied_at': DateTime.now().toIso8601String()};
+    if (occupiedBy != null) updates['occupied_by'] = occupiedBy;
+    if (status == 'AVAILABLE') {
+      updates['occupied_by'] = null;
+      updates['occupied_at'] = null;
+    }
+    await (await database).update('seats', updates,
+        where: 'trip_id=? AND seat_number=?', whereArgs: [tripId, seatNumber]);
+  }
+
   Future<List<int>> getOccupiedSeats(int tripId) async {
     final r = await (await database).rawQuery('''
-      SELECT p.seat_number FROM passengers p JOIN bookings b ON p.booking_id=b.id
-      WHERE b.trip_id=? AND b.status!='ANNULE' ''', [tripId]);
+      SELECT seat_number FROM seats WHERE trip_id=? AND status='OCCUPIED' ''', [tripId]);
+    return r.map((x) => x['seat_number'] as int).toList();
+  }
+
+  Future<List<int>> getAvailableSeats(int tripId) async {
+    final r = await (await database).rawQuery('''
+      SELECT seat_number FROM seats WHERE trip_id=? AND status='AVAILABLE' ''', [tripId]);
     return r.map((x) => x['seat_number'] as int).toList();
   }
 

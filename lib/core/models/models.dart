@@ -247,6 +247,41 @@ class PassengerModel {
     'full_name': fullName, 'seat_number': seatNumber};
 }
 
+// ─── SEAT MODEL ──────────────────────────────────────────────────────────────
+
+class SeatModel {
+  final int? id;
+  final int tripId;
+  final int seatNumber;
+  final String status; // 'AVAILABLE', 'OCCUPIED', 'BLOCKED'
+  final String? occupiedBy; // Name of passenger or admin note
+  final DateTime? occupiedAt;
+
+  SeatModel({this.id, required this.tripId, required this.seatNumber,
+    this.status = 'AVAILABLE', this.occupiedBy, this.occupiedAt});
+
+  factory SeatModel.fromMap(Map<String, dynamic> m) => SeatModel(
+      id: m['id'], tripId: m['trip_id'] ?? 0, seatNumber: m['seat_number'] ?? 0,
+      status: m['status'] ?? 'AVAILABLE', occupiedBy: m['occupied_by'],
+      occupiedAt: m['occupied_at'] != null ? DateTime.tryParse(m['occupied_at']) : null);
+
+  Map<String, dynamic> toMap() => {
+    if (id != null) 'id': id, 'trip_id': tripId, 'seat_number': seatNumber,
+    'status': status, 'occupied_by': occupiedBy,
+    'occupied_at': occupiedAt?.toIso8601String()};
+
+  bool get isAvailable => status == 'AVAILABLE';
+  bool get isOccupied => status == 'OCCUPIED';
+  bool get isBlocked => status == 'BLOCKED';
+
+  SeatModel copyWith({int? id, int? tripId, int? seatNumber, String? status,
+    String? occupiedBy, DateTime? occupiedAt}) =>
+      SeatModel(id: id ?? this.id, tripId: tripId ?? this.tripId,
+          seatNumber: seatNumber ?? this.seatNumber, status: status ?? this.status,
+          occupiedBy: occupiedBy ?? this.occupiedBy,
+          occupiedAt: occupiedAt ?? this.occupiedAt);
+}
+
 // ─── LUGGAGE MODEL ───────────────────────────────────────────────────────────
 
 class LuggageModel {

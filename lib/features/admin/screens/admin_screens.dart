@@ -1125,6 +1125,16 @@ class AdminTripsScreen extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
+                          icon: const Icon(Icons.event_seat_rounded,
+                              size: 18, color: AppColors.primary),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    AdminSeatManagementScreen(trip: trip)),
+                          ),
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.edit_rounded,
                               size: 18, color: AppColors.primary),
                           onPressed: () => Navigator.push(
@@ -3514,5 +3524,244 @@ class _PaymentAccountFormSheetState extends State<_PaymentAccountFormSheet> {
           content: Text(ok ? 'Compte enregistré ✓' : 'Erreur.'),
           backgroundColor: ok ? AppColors.success : AppColors.error));
     }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEAT MANAGEMENT SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+class AdminSeatManagementScreen extends StatefulWidget {
+  final TripModel trip;
+
+  const AdminSeatManagementScreen({super.key, required this.trip});
+
+  @override
+  State<AdminSeatManagementScreen> createState() =>
+      _AdminSeatManagementScreenState();
+}
+
+class _AdminSeatManagementScreenState extends State<AdminSeatManagementScreen> {
+  List<SeatModel> _seats = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeats();
+  }
+
+  Future<void> _loadSeats() async {
+    try {
+      final seats = await DatabaseHelper.instance.getSeatsForTrip(widget.trip.id!);
+      setState(() {
+        _seats = seats;
+        _loading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading seats: $e');
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleSeatStatus(int seatNumber) async {
+    final seat = _seats.firstWhere((s) => s.seatNumber == seatNumber);
+    final newStatus = seat.isOccupied ? 'AVAILABLE' : 'OCCUPIED';
+    final occupiedBy = newStatus == 'OCCUPIED' ? 'Admin' : null;
+
+    try {
+      await DatabaseHelper.instance.updateSeatStatus(
+        widget.trip.id!, seatNumber, newStatus, occupiedBy: occupiedBy);
+      await _loadSeats(); // Refresh
+
+      // Update trip available seats count
+      await DatabaseHelper.instance.updateTripAvailableSeatsFromSeatsTable(widget.trip.id!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Siège ${seatNumber} ${newStatus == 'OCCUPIED' ? 'occupé' : 'libéré'}'),
+          backgroundColor: newStatus == 'OCCUPIED' ? AppColors.error : AppColors.success,
+        ));
+      }
+    } catch (e) {
+      debugPrint('Error updating seat: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Erreur lors de la mise à jour du siège'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: _AdminAppBar(title: 'Gestion des Sièges'),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+        children: [
+          // Trip info header
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: AppColors.surfaceContainerLowest,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.trip.route?.originCity ?? ''} → ${widget.trip.route?.destinationCity ?? ''}',
+                  style: GoogleFonts.manrope(
+                      fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  '${DateFormat('d MMM yyyy', 'fr_FR').format(widget.trip.departureDate)} • ${widget.trip.departureTime}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  'Bus: ${widget.trip.bus?.busNumber ?? ''} • ${_seats.where((s) => s.isAvailable).length} places disponibles',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Legend
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                _SeatLegendItem(color: AppColors.surfaceContainerHigh, label: 'Libre'),
+                const SizedBox(width: 16),
+                _SeatLegendItem(color: AppColors.primary, label: 'Occupé'),
+                const SizedBox(width: 16),
+                _SeatLegendItem(color: AppColors.errorContainer, label: 'Bloqué'),
+              ],
+            ),
+          ),
+
+          // Seat grid
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _AdminSeatGrid(
+                seats: _seats,
+                onSeatTap: _toggleSeatStatus,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminSeatGrid extends StatelessWidget {
+  final List<SeatModel> seats;
+  final Function(int) onSeatTap;
+
+  const _AdminSeatGrid({required this.seats, required this.onSeatTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final capacity = seats.length;
+    final rows = (capacity / 4).ceil();
+
+    return Column(
+      children: List.generate(rows, (rowIndex) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(4, (colIndex) {
+            final seatIndex = rowIndex * 4 + colIndex + 1;
+            if (seatIndex > capacity) return const SizedBox(width: 60);
+
+            final seat = _getSeat(seatIndex);
+
+            return GestureDetector(
+              onTap: () => onSeatTap(seatIndex),
+              child: Container(
+                width: 50,
+                height: 50,
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: seat.isOccupied
+                      ? AppColors.primary
+                      : seat.isBlocked
+                          ? AppColors.errorContainer
+                          : AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: seat.isOccupied
+                        ? AppColors.primaryFixed
+                        : seat.isBlocked
+                            ? AppColors.error
+                            : AppColors.outlineVariant,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    seatIndex.toString(),
+                    style: GoogleFonts.manrope(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: seat.isOccupied
+                          ? AppColors.primary
+                          : seat.isBlocked
+                              ? AppColors.error
+                              : AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      }),
+    );
+  }
+
+  SeatModel _getSeat(int seatNumber) {
+    return seats.firstWhere(
+      (s) => s.seatNumber == seatNumber,
+      orElse: () => SeatModel(tripId: 0, seatNumber: seatNumber),
+    );
+  }
+}
+
+class _SeatLegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _SeatLegendItem({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
   }
 }

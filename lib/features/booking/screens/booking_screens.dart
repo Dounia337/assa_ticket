@@ -438,12 +438,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   Future<void> _loadOccupied() async {
     final trip = context.read<BookingProvider>().selectedTrip;
     if (trip?.id != null) {
-      // Would load from DB in real scenario
-      await Future.delayed(const Duration(milliseconds: 300));
-      setState(() {
-        _occupied = {3, 7, 12, 18, 22, 27, 31, 36};
-        _loading = false;
-      });
+      try {
+        final occupiedSeats = await DatabaseHelper.instance.getOccupiedSeats(trip!.id!);
+        setState(() {
+          _occupied = occupiedSeats.toSet();
+          _loading = false;
+        });
+      } catch (e) {
+        debugPrint('Error loading seats: $e');
+        setState(() => _loading = false);
+      }
     } else {
       setState(() => _loading = false);
     }
@@ -753,6 +757,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   }
 
   void _continue() {
+    final isGuest = context.read<AuthProvider>().isGuest;
     final details = _controllers.map((m) => {
       'name': m['name']?.text ?? '',
       'phone': m['phone']?.text ?? '',
@@ -762,6 +767,15 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Veuillez remplir le nom de tous les passagers')),
+      );
+      return;
+    }
+
+    // For guest users, phone number is required
+    if (isGuest && details.any((d) => (d['phone'] ?? '').isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Le numéro de téléphone est requis pour les invités')),
       );
       return;
     }

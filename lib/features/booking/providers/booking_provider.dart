@@ -113,6 +113,13 @@ class BookingProvider extends ChangeNotifier {
             bookingId: bookingId,
             fullName: _passengerDetails[i]['name'] ?? 'Passager ${i + 1}',
             seatNumber: seat));
+
+        // Mark seat as occupied
+        if (seat > 0) {
+          await DatabaseHelper.instance.updateSeatStatus(
+            _selectedTrip!.id!, seat, 'OCCUPIED',
+            occupiedBy: _passengerDetails[i]['name'] ?? 'Passager ${i + 1}');
+        }
       }
 
       if (_luggageDetails != null) {
@@ -134,6 +141,9 @@ class BookingProvider extends ChangeNotifier {
       final newSeats =
       (_selectedTrip!.availableSeats - _selectedSeats.length).clamp(0, 999);
       await DatabaseHelper.instance.updateTripSeats(_selectedTrip!.id!, newSeats);
+
+      // Update available seats count from seats table
+      await DatabaseHelper.instance.updateTripAvailableSeatsFromSeatsTable(_selectedTrip!.id!);
 
       // Send notification
       try {
