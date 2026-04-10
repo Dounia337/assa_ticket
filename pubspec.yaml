@@ -1,0 +1,75 @@
+name: assa_ticket
+description: "Assa Ticket - Application de réservation de billets de bus au Tchad"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  provider: ^6.1.1
+
+  # Database
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path: ^1.8.3
+
+  # Navigation
+  go_router: ^13.0.0
+
+  # UI
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  lottie: ^3.0.0
+
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^5.0.2
+  permission_handler: ^11.2.0
+
+  # PDF / Ticket
+  pdf: ^3.10.8
+  printing: ^5.12.0
+  path_provider: ^2.1.2
+
+  # QR Code
+  qr_flutter: ^4.1.0
+
+  # Image
+  image_picker: ^1.0.7
+
+  # ── NEW DEPENDENCIES ─────────────────────────────────────────────────────
+
+  # Geolocation (GPS detection)
+  geolocator: ^11.0.0
+
+  # Local Push Notifications
+  flutter_local_notifications: ^17.2.1
+
+  # URL Launcher (WhatsApp, phone, email)
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
