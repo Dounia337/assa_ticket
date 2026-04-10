@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_constants.dart';
@@ -35,7 +34,6 @@ class _RouteMapScreenState extends State<RouteMapScreen>
   String? _destination;
   String? _userCity;       // nearest city to GPS location
   bool _detectingGPS = false;
-  bool _gpsAttempted = false;
 
   // Animation for the route line drawing
   late AnimationController _routeCtrl;
@@ -99,7 +97,6 @@ class _RouteMapScreenState extends State<RouteMapScreen>
 
     setState(() {
       _detectingGPS = false;
-      _gpsAttempted = true;
       _userCity = city;
       // If no origin set yet, auto-fill with detected city
       if (city != null && _origin == null) _origin = city;

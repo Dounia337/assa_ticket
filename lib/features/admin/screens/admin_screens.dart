@@ -146,7 +146,7 @@ class _AdminHome extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.notifications_outlined,
                     color: Colors.white),
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
               ),
               IconButton(
                 icon: const Icon(Icons.logout_rounded, color: Colors.white),
@@ -696,7 +696,6 @@ class _AdminRouteFormScreenState extends State<AdminRouteFormScreen> {
   String? _destination;
   final _priceCtrl = TextEditingController();
   bool _isActive = true;
-  final bool _isPopular = false;
   bool _loading = false;
 
   @override
@@ -1973,8 +1972,6 @@ class _FaqItem extends StatefulWidget {
 }
 
 class _FaqItemState extends State<_FaqItem> {
-  bool _expanded = false;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1989,7 +1986,6 @@ class _FaqItemState extends State<_FaqItem> {
           widget.question,
           style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600),
         ),
-        onExpansionChanged: (v) => setState(() => _expanded = v),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../booking/providers/booking_provider.dart';
 import '../../../core/constants/app_constants.dart';
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? _origin;
   String? _destination;
   DateTime _date = DateTime.now();
@@ -99,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final firstName = (user?.fullName ?? 'Voyageur').split(' ').first;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
       drawer: Drawer(
         child: ListView(
@@ -118,12 +121,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.home_rounded),
+              leading: const Icon(Icons.home),
               title: const Text('Accueil'),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: const Icon(Icons.ticket_rounded),
+              leading: const Icon(Icons.confirmation_number),
               title: const Text('Mes Billets'),
               onTap: () {
                 Navigator.pop(context);
@@ -131,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.notifications_rounded),
+              leading: const Icon(Icons.notifications),
               title: const Text('Notifications'),
               onTap: () {
                 Navigator.pop(context);
@@ -139,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.person_rounded),
+              leading: const Icon(Icons.person),
               title: const Text('Profil'),
               onTap: () {
                 Navigator.pop(context);
@@ -147,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.help_center_rounded),
+              leading: const Icon(Icons.support_agent),
               title: const Text('Support'),
               onTap: () {
                 Navigator.pop(context);
@@ -156,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout_rounded),
+              leading: const Icon(Icons.exit_to_app),
               title: const Text('Déconnexion'),
               onTap: () {
                 Navigator.pop(context);
@@ -191,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           GestureDetector(
                             onTap: () =>
-                                Scaffold.of(context).openDrawer(),
+                                _scaffoldKey.currentState?.openDrawer(),
                             child: const Icon(Icons.menu_rounded,
                                 color: Colors.white, size: 26),
                           ),
@@ -638,26 +641,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  static const _popularRoutes = [
-    {
-      'origin': "N'Djamena",
-      'destination': 'Moundou',
-      'price': '15 000 FCFA',
-      'duration': '8h 30min',
-    },
-    {
-      'origin': "N'Djamena",
-      'destination': 'Sarh',
-      'price': '18 000 FCFA',
-      'duration': '10h 00min',
-    },
-    {
-      'origin': "N'Djamena",
-      'destination': 'Abéché',
-      'price': '22 000 FCFA',
-      'duration': '12h 00min',
-    },
-  ];
 }
 
 class _QuickAction extends StatelessWidget {
@@ -1153,12 +1136,28 @@ class _NearbyTripsSectionState extends State<_NearbyTripsSection> {
   bool             _detecting = false;
   bool             _asked     = false;
   String?          _error;
+  late SharedPreferences _prefs;
 
   @override
   void initState() {
     super.initState();
-    // Ask once automatically
-    WidgetsBinding.instance.addPostFrameCallback((_) => _askAndDetect());
+    _initPrefs();
+  }
+
+  Future<void> _initPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    final alreadyAsked = _prefs.getBool('location_permission_asked') ?? false;
+    
+    if (!alreadyAsked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _askAndDetect());
+    } else {
+      // User has been asked before, check their preference and detect if allowed
+      final locationAllowed = _prefs.getBool('location_permission_allowed') ?? false;
+      if (locationAllowed && mounted) {
+        setState(() => _asked = true);
+        await _detectAndLoad();
+      }
+    }
   }
 
   Future<void> _askAndDetect() async {
@@ -1201,6 +1200,11 @@ class _NearbyTripsSectionState extends State<_NearbyTripsSection> {
           ],
         ),
       );
+      
+      // Save user's choice to SharedPreferences
+      await _prefs.setBool('location_permission_asked', true);
+      await _prefs.setBool('location_permission_allowed', allow ?? false);
+      
       if (allow != true) { setState(() => _detecting = false); return; }
     }
 

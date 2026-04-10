@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -461,13 +460,13 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
             backgroundColor: AppColors.primary,
             leading: IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white),
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.home),
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.account_circle_rounded,
                     color: Colors.white),
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
