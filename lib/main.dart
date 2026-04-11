@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/booking/providers/booking_provider.dart';
 import 'features/admin/providers/admin_provider.dart';
@@ -24,11 +22,6 @@ import 'shared/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
 
   // Initialise local notification service
   await NotificationService.instance.init();

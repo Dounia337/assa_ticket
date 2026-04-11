@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:assa_ticket/core/database/database_helper.dart';
+import 'package:assa_ticket/core/api/api_service.dart';
 import 'package:assa_ticket/core/models/models.dart';
 import 'package:assa_ticket/core/constants/app_constants.dart';
 import 'package:assa_ticket/core/services/notification_service.dart';
@@ -44,7 +44,7 @@ class BookingProvider extends ChangeNotifier {
     _searchError = null; _searchResults = []; notifyListeners();
     try {
       await Future.delayed(const Duration(milliseconds: 800));
-      _searchResults = await DatabaseHelper.instance.searchTrips(
+      _searchResults = await ApiService.instance.searchTrips(
           origin: query.origin, destination: query.destination, date: query.date);
       if (_searchResults.isEmpty) {
         _searchError = 'Aucun trajet trouvé pour cette recherche.';
@@ -105,25 +105,25 @@ class BookingProvider extends ChangeNotifier {
         paymentScreenshot: _paymentScreenshot,
       );
 
-      final bookingId = await DatabaseHelper.instance.insertBooking(booking);
+      final bookingId = await ApiService.instance.insertBooking(booking);
 
       for (int i = 0; i < _passengerDetails.length; i++) {
         final seat = i < _selectedSeats.length ? _selectedSeats[i] : 0;
-        await DatabaseHelper.instance.insertPassenger(PassengerModel(
+        await ApiService.instance.insertPassenger(PassengerModel(
             bookingId: bookingId,
             fullName: _passengerDetails[i]['name'] ?? 'Passager ${i + 1}',
             seatNumber: seat));
 
         // Mark seat as occupied
         if (seat > 0) {
-          await DatabaseHelper.instance.updateSeatStatus(
+          await ApiService.instance.updateSeatStatus(
             _selectedTrip!.id!, seat, 'OCCUPIED',
             occupiedBy: _passengerDetails[i]['name'] ?? 'Passager ${i + 1}');
         }
       }
 
       if (_luggageDetails != null) {
-        await DatabaseHelper.instance.insertLuggage(LuggageModel(
+        await ApiService.instance.insertLuggage(LuggageModel(
             bookingId: bookingId,
             numberOfItems: _luggageDetails!.numberOfItems,
             totalWeight: _luggageDetails!.totalWeight,
@@ -131,7 +131,7 @@ class BookingProvider extends ChangeNotifier {
       }
 
       final txRef = 'TXN-${DateTime.now().millisecondsSinceEpoch}';
-      await DatabaseHelper.instance.insertPayment(PaymentModel(
+      await ApiService.instance.insertPayment(PaymentModel(
           bookingId: bookingId,
           method: _selectedPaymentMethod ?? AppConstants.paymentAtGare,
           amount: totalPrice,
@@ -140,10 +140,10 @@ class BookingProvider extends ChangeNotifier {
 
       final newSeats =
       (_selectedTrip!.availableSeats - _selectedSeats.length).clamp(0, 999);
-      await DatabaseHelper.instance.updateTripSeats(_selectedTrip!.id!, newSeats);
+      await ApiService.instance.updateTripSeats(_selectedTrip!.id!, newSeats);
 
       // Update available seats count from seats table
-      await DatabaseHelper.instance.updateTripAvailableSeatsFromSeatsTable(_selectedTrip!.id!);
+      await ApiService.instance.updateTripAvailableSeatsFromSeatsTable(_selectedTrip!.id!);
 
       // Send notification
       try {
@@ -154,7 +154,7 @@ class BookingProvider extends ChangeNotifier {
             method: _selectedPaymentMethod ?? AppConstants.paymentAtGare);
       } catch (e) { debugPrint('>>> Notification error (non-fatal): $e'); }
 
-      final fullBooking = await DatabaseHelper.instance.getBookingById(bookingId);
+      final fullBooking = await ApiService.instance.getBookingById(bookingId);
       return fullBooking?.copyWith(ticketNumber: ticketNumber);
     } catch (e) {
       debugPrint('>>> completeBooking error: $e');
@@ -169,7 +169,7 @@ class BookingProvider extends ChangeNotifier {
 
   Future<void> loadUserBookings(int userId) async {
     _isLoadingBookings = true; notifyListeners();
-    try { _userBookings = await DatabaseHelper.instance.getUserBookings(userId); }
+    try { _userBookings = await ApiService.instance.getUserBookings(userId); }
     catch (_) { _userBookings = []; }
     finally { _isLoadingBookings = false; notifyListeners(); }
   }

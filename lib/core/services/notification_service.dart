@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../database/database_helper.dart';
+import '../api/api_service.dart';
 import '../models/models.dart';
 import '../constants/app_constants.dart';
 
@@ -90,7 +90,7 @@ class NotificationService {
   }) async {
     // Persist in DB
     try {
-      await DatabaseHelper.instance.insertNotification(AppNotificationModel(
+      await ApiService.instance.insertNotification(AppNotificationModel(
         userId: userId,
         title: title,
         body: body,

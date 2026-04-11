@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:assa_ticket/core/constants/app_constants.dart';
-import 'package:assa_ticket/core/database/database_helper.dart';
+import 'package:assa_ticket/core/api/api_service.dart';
 import 'package:assa_ticket/core/models/models.dart';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
@@ -33,7 +33,7 @@ class AuthProvider extends ChangeNotifier {
       final userId = prefs.getInt(AppConstants.prefUserId);
 
       if (isLoggedIn && userId != null) {
-        final user = await DatabaseHelper.instance.getUserById(userId);
+        final user = await ApiService.instance.getUserById(userId);
         if (user != null) {
           _currentUser = user;
           _state = AuthState.authenticated;
@@ -96,7 +96,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final phone = _pendingPhone!;
-      final existingUser = await DatabaseHelper.instance.getUserByPhone(phone);
+      final existingUser = await ApiService.instance.getUserByPhone(phone);
       debugPrint('>>> USER FOUND IN DB: ${existingUser?.fullName}, ROLE: ${existingUser?.role}');
 
       if (existingUser != null) {
@@ -152,8 +152,8 @@ class AuthProvider extends ChangeNotifier {
         role: isAdmin ? AppConstants.roleAdmin : AppConstants.roleUser,
       );
 
-      final id = await DatabaseHelper.instance.insertUser(newUser);
-      final user = await DatabaseHelper.instance.getUserById(id);
+      final id = await ApiService.instance.insertUser(newUser);
+      final user = await ApiService.instance.getUserById(id);
 
       if (user == null) throw Exception('Impossible de créer le compte.');
 
@@ -216,7 +216,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> updateProfile(String name, String? email) async {
     if (_currentUser == null) return;
     final updated = _currentUser!.copyWith(fullName: name, email: email);
-    await DatabaseHelper.instance.updateUser(updated);
+    await ApiService.instance.updateUser(updated);
     _currentUser = updated;
     notifyListeners();
   }
