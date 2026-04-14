@@ -8,7 +8,7 @@ import '../../booking/providers/booking_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/models/models.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/api/api_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/shared_widgets.dart';
@@ -890,7 +890,7 @@ class _PromotionsBannerState extends State<_PromotionsBanner> {
 
   Future<void> _load() async {
     try {
-      final promos = await DatabaseHelper.instance.getActivePromotions();
+      final promos = await ApiService.instance.getActivePromotions();
       if (mounted) setState(() => _promos = promos);
     } catch (_) {}
   }
@@ -1008,7 +1008,7 @@ class _PromosSheetState extends State<_PromosSheet> {
 
   Future<void> _load() async {
     try {
-      final p = await DatabaseHelper.instance.getActivePromotions();
+      final p = await ApiService.instance.getActivePromotions();
       if (mounted) setState(() { _promos = p; _loading = false; });
     } catch (_) {
       setState(() => _loading = false);
@@ -1216,7 +1216,7 @@ class _NearbyTripsSectionState extends State<_NearbyTripsSection> {
     try {
       final city = await LocationService.instance.detectNearestCity();
       if (city != null) {
-        final trips = await DatabaseHelper.instance.getTripsByOrigin(city);
+        final trips = await ApiService.instance.getTripsByOrigin(city);
         setState(() { _city = city; _trips = trips; });
         widget.onCityDetected(city);
       } else {
@@ -1407,7 +1407,7 @@ class _PopularRoutesSectionState extends State<_PopularRoutesSection> {
 
   Future<void> _load() async {
     try {
-      final r = await DatabaseHelper.instance.getPopularRoutes();
+      final r = await ApiService.instance.getPopularRoutes();
       if (mounted) setState(() { _routes = r; _loading = false; });
     } catch (_) { if (mounted) setState(() => _loading = false); }
   }

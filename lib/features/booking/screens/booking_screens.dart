@@ -11,7 +11,7 @@ import '../../../core/models/models.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/shared_widgets.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/api/api_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TRIP DETAILS SCREEN
@@ -439,7 +439,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     final trip = context.read<BookingProvider>().selectedTrip;
     if (trip?.id != null) {
       try {
-        final occupiedSeats = await DatabaseHelper.instance.getOccupiedSeats(trip!.id!);
+        final occupiedSeats = await ApiService.instance.getOccupiedSeats(trip!.id!);
         setState(() {
           _occupied = occupiedSeats.toSet();
           _loading = false;
@@ -1285,7 +1285,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() { _selectedMethod = methodId; _account = null; _screenshotPath = null; });
     if (methodId == AppConstants.paymentMoovMoney ||
         methodId == AppConstants.paymentAirtelMoney) {
-      final acct = await DatabaseHelper.instance.getPaymentAccountByType(methodId);
+      final acct = await ApiService.instance.getPaymentAccountByType(methodId);
       setState(() => _account = acct);
     }
   }
@@ -1319,8 +1319,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final userId  = auth.currentUser?.id ?? 0;
     final booking = await context.read<BookingProvider>().completeBooking(userId);
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (booking != null && mounted) {
+    if (booking != null) {
       Navigator.pushNamedAndRemoveUntil(
           context, AppRoutes.bookingConfirmation,
               (r) => r.settings.name == AppRoutes.home,

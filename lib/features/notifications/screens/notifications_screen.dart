@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/api/api_service.dart';
 import '../../../core/models/models.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../shared/theme/app_theme.dart';
@@ -32,7 +32,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
     try {
-      final notifs = await DatabaseHelper.instance.getUserNotifications(user.id!);
+      final notifs = await ApiService.instance.getUserNotifications(user.id!);
       setState(() => _notifications = notifs);
     } catch (e) {
       debugPrint('>>> Notif load error: $e');
@@ -44,7 +44,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAllRead() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user?.id == null || user!.id == 0) return;
-    await DatabaseHelper.instance.markAllNotificationsRead(user.id!);
+    await ApiService.instance.markAllNotificationsRead(user.id!);
     setState(() {
       _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
     });
@@ -52,7 +52,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markRead(AppNotificationModel n) async {
     if (n.isRead || n.id == null) return;
-    await DatabaseHelper.instance.markNotificationRead(n.id!);
+    await ApiService.instance.markNotificationRead(n.id!);
     setState(() {
       _notifications = _notifications
           .map((item) => item.id == n.id ? item.copyWith(isRead: true) : item)

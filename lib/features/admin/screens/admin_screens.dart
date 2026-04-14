@@ -9,7 +9,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/models/models.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/api/api_service.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/shared_widgets.dart';
 
@@ -1784,7 +1784,7 @@ class _SupportScreenState extends State<SupportScreen> {
 
   Future<void> _loadContact() async {
     try {
-      final info = await DatabaseHelper.instance.getContactInfo();
+      final info = await ApiService.instance.getContactInfo();
       setState(() { _contactInfo = info; _loading = false; });
     } catch (_) {
       setState(() => _loading = false);
@@ -3553,7 +3553,7 @@ class _AdminSeatManagementScreenState extends State<AdminSeatManagementScreen> {
 
   Future<void> _loadSeats() async {
     try {
-      final seats = await DatabaseHelper.instance.getSeatsForTrip(widget.trip.id!);
+      final seats = await ApiService.instance.getSeatsForTrip(widget.trip.id!);
       setState(() {
         _seats = seats;
         _loading = false;
@@ -3570,12 +3570,12 @@ class _AdminSeatManagementScreenState extends State<AdminSeatManagementScreen> {
     final occupiedBy = newStatus == 'OCCUPIED' ? 'Admin' : null;
 
     try {
-      await DatabaseHelper.instance.updateSeatStatus(
+      await ApiService.instance.updateSeatStatus(
         widget.trip.id!, seatNumber, newStatus, occupiedBy: occupiedBy);
       await _loadSeats(); // Refresh
 
       // Update trip available seats count
-      await DatabaseHelper.instance.updateTripAvailableSeatsFromSeatsTable(widget.trip.id!);
+      await ApiService.instance.updateTripAvailableSeatsFromSeatsTable(widget.trip.id!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
