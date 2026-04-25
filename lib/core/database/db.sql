@@ -140,3 +140,5 @@ CREATE TABLE payment_accounts (
     account_number VARCHAR(100) NOT NULL,
     is_active TINYINT(1) DEFAULT 1
 ) ENGINE=InnoDB;
+
+--
