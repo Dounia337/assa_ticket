@@ -15,6 +15,7 @@ A full-stack Flutter mobile application that digitalises intercity bus ticket bo
 | Figma Design | https://www.figma.com/design/leOkNoyVtznOo1LW2yOsnJ/Assa-ticket?node-id=0-1&t=aPzCQ3B3mg4h8LUT-1 |
 | Backend API | `http://169.239.251.102:280/~deubaybe.dounia/api` |
 | API | `https://github.com/Dounia337/api.git  |
+| PDF Report| https://docs.google.com/document/d/1XTIi6A1fTYbirlvG4HdS1edBBqTWkJ7JerqQ9HBw17w/edit?usp=sharing |
 
 
 ---
