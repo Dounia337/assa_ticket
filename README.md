@@ -26,20 +26,6 @@ Bus travel is the primary means of intercity transport in Chad, yet the entire b
 
 ---
 
-## Screenshots
-
-> Add screenshots here after running the app
-
-| Onboarding | Home | Seat Selection | Booking Confirmation |
-|---|---|---|---|
-| *(screenshot)* | *(screenshot)* | *(screenshot)* | *(screenshot)* |
-
-| Search Results | Payment | Admin Dashboard | Notifications |
-|---|---|---|---|
-| *(screenshot)* | *(screenshot)* | *(screenshot)* | *(screenshot)* |
-
----
-
 ## Features
 
 ### For Travellers
@@ -274,7 +260,6 @@ ANNULÉ (Cancelled) — possible from any state
 ## Developer
 
 **Deubaybe Dounia**
-successdouni.a@gmail.com
 April 2026
 
 ---
